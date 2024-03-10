@@ -1,6 +1,7 @@
 const asyncHandler = require('express-async-handler');
 const User = require('../models/userModel');
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
 
 // Generate token
 const generateToken = (id) => {
@@ -69,7 +70,80 @@ const registerUser = asyncHandler(async (req, res) => {
 
 // Login user
 const loginUser = asyncHandler(async (req, res) => {
-  res.send('Login user');
+  const { email, password } = req.body;
+
+  //validation
+  if (!email || !password) {
+    res.status(400);
+    throw new Error('Please fill all the fields');
+  }
+
+  //check if user exists
+  const user = await User.findOne({ email });
+
+  if (!user) {
+    res.status(400);
+    throw new Error('User not found, please sign up first');
+  }
+
+  //check if password correct
+  const passwordIsCorrect = await bcrypt.compare(password, user.password);
+
+    // Generate token
+    const token = generateToken(user._id);
+
+    // Send HTTP only cookie
+    res.cookie('token', token, {
+      path: '/',
+      httpOnly: true,
+      expires: new Date(Date.now() + 1000 * 86400), // 1 day
+      sameSite: 'none',
+      secure: true,
+    });
+
+  if (user && passwordIsCorrect) {
+    const { _id, name, email, photo, phone, bio } = user;
+    res.status(200).json({
+      _id,
+      name,
+      email,
+      photo,
+      phone,
+      bio,
+      token,
+    });
+  }else{
+    res.status(400);
+    throw new Error('Invalid email or password');
+  }
+
+  // Generate token
+  const token = generateToken(user._id);
+
+  // Send HTTP only cookie
+  res.cookie('token', token, {
+    path: '/',
+    httpOnly: true,
+    expires: new Date(Date.now() + 1000 * 86400), // 1 day
+    sameSite: 'none',
+    secure: true,
+  });
+
+  if (user) {
+    const { _id, name, email, photo, phone, bio } = user;
+    res.status(201).json({
+      _id,
+      name,
+      email,
+      photo,
+      phone,
+      bio,
+      token,
+    });
+  } else {
+    res.status(400);
+    throw new Error('Invalid user data');
+  }
 });
 
 module.exports = {
