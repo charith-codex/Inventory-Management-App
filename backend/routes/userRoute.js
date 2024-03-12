@@ -6,10 +6,11 @@ const {
   logout,
   getUser,
 } = require('../controllers/userController');
+const protect = require('../middleWare/authMiddleware');
 
 router.post('/register', registerUser);
 router.post('/login', loginUser);
 router.get('/logout', logout);
-router.get('/getuser', getUser);
+router.get('/getuser', protect, getUser);
 
 module.exports = router;
