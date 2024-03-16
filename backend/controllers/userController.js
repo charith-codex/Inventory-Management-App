@@ -146,7 +146,7 @@ const getUser = asyncHandler(async (req, res) => {
     });
   } else {
     res.status(400);
-    throw new Error('User Not Found');
+    throw new Error("User Not Found");
   }
 });
 
