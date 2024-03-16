@@ -8,7 +8,7 @@ const {
   loginStatus,
   updateUser,
 } = require('../controllers/userController');
-const protect = -require('../middleWare/authMiddleware');
+const protect = require('../middleWare/authMiddleware');
 
 router.post('/register', registerUser);
 router.post('/login', loginUser);
