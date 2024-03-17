@@ -146,7 +146,7 @@ const getUser = asyncHandler(async (req, res) => {
     });
   } else {
     res.status(400);
-    throw new Error("User Not Found");
+    throw new Error('User Not Found');
   }
 });
 
@@ -193,6 +193,36 @@ const updateUser = asyncHandler(async (req, res) => {
   }
 });
 
+// change password
+const changePassword = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id);
+
+  if (!user) {
+    res.status(400);
+    throw new Error('User not found');
+  }
+
+  //validation
+  const { oldPassword, password } = req.body;
+  if (!oldPassword || !password) {
+    res.status(400);
+    throw new Error('Please fill all the fields');
+  }
+
+  //check if old password correct
+  const passwordIsCorrect = await bcrypt.compare(oldPassword, user.password);
+
+  //save new password
+  if (user && passwordIsCorrect) {
+    user.password = password;
+    await user.save();
+    res.status(200).send('Password changed successfully');
+  } else {
+    res.status(400);
+    throw new Error('Invalid old password');
+  }
+});
+
 module.exports = {
   registerUser,
   loginUser,
@@ -200,4 +230,5 @@ module.exports = {
   getUser,
   loginStatus,
   updateUser,
+  changePassword,
 };
