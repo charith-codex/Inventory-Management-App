@@ -2,6 +2,8 @@ const asyncHandler = require('express-async-handler');
 const User = require('../models/userModel');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const Token = require('../models/tokenModel');
+const crypto = require('crypto');
 
 // Generate token
 const generateToken = (id) => {
@@ -224,7 +226,44 @@ const changePassword = asyncHandler(async (req, res) => {
 });
 
 const forgotPassword = asyncHandler(async (req, res) => {
-  res.send('forgot Password');
+  const { email } = req.body;
+  const user = await User.findOne({ email });
+
+  if (!user) {
+    res.status(404);
+    throw new Error('User not found, please sign up first');
+  }
+
+  // Create reset token
+  let resetToken = crypto.randomBytes(32).toString('hex') + user._id;
+
+  // Hash reset token and save to DB
+  const hashedToken = crypto
+    .createHash('sha256')
+    .update(resetToken)
+    .digest('hex');
+
+  // save token to DB
+  await new Token({
+    userId: user._id,
+    token: hashedToken,
+    createAt: Date.now(),
+    expiresAt: Date.now() + 30 * (60 * 1000), //30min 10 minutes
+  }).save();
+
+  // construct reset url
+  const resetUrl = `${process.env.FRONTEND_URL}/resetpassword/${resetToken}`;
+
+  // RESET email
+  const message = `
+  <h2>Hello ${user.name}</h2>
+  <p>Please use the url below to reset your password</p>
+  <p>This reset link is valid for only 30 minutes</p>
+  <a href=${resetUrl} clicktracking=off>${resetUrl}</a>
+  <p>Regards</p>
+  <p>Invento Team</p>`;
+
+  res.send('Password reset email sent');
 });
 
 module.exports = {
@@ -235,5 +274,5 @@ module.exports = {
   loginStatus,
   updateUser,
   changePassword,
-  forgotPassword
+  forgotPassword,
 };
