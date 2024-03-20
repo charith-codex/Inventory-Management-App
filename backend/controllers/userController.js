@@ -247,7 +247,7 @@ const forgotPassword = asyncHandler(async (req, res) => {
   await new Token({
     userId: user._id,
     token: hashedToken,
-    createAt: Date.now(),
+    createdAt: Date.now(),
     expiresAt: Date.now() + 30 * (60 * 1000), //30min 10 minutes
   }).save();
 
@@ -263,7 +263,19 @@ const forgotPassword = asyncHandler(async (req, res) => {
   <p>Regards</p>
   <p>Invento Team</p>`;
 
-  res.send('Password reset email sent');
+  const subject = 'Password Reset Request';
+  const send_to = user.email;
+  const send_from = process.env.EMAIL_USER;
+
+  try {
+    await sendEmail(subject, message, send_to, send_from);
+    res
+      .status(200)
+      .json({ success: true, message: 'Password reset email sent' });
+  } catch (error) {
+    res.status(500);
+    throw new Error('Email could not be sent');
+  }
 });
 
 module.exports = {
